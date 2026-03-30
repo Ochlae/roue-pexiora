@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roue Bounty Claude</title>
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:radial-gradient(circle at top,#2b2b2b,#111);
+    color:white;
+}
+.container{
+    max-width:1500px;
+    margin:0 auto;
+    padding:16px;
+}
+h1{
+    text-align:center;
+    color:#ffd700;
+    margin:0 0 14px 0;
+}
+.main-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+}
+.left-column{
+    flex:1.35;
+    min-width:0;
+}
+.right-column{
+    flex:0.95;
+    text-align:center;
+}
+.panel{
+    background:rgba(255,255,255,0.06);
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 0 12px rgba(0,0,0,0.3);
+    margin-bottom:14px;
+}
+.panel h2{
+    margin:0 0 10px 0;
+    text-align:center;
+    color:#ffd700;
+    font-size:22px;
+}
+.config-bar{
+    display:grid;
+    grid-template-columns: 95px 80px 80px 80px 80px 80px 80px 120px;
+    gap:8px;
+    align-items:end;
+}
+.cfg{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+.cfg label{
+    font-size:12px;
+    color:#ffd700;
+    text-align:center;
+}
+.cfg input{
+    width:100%;
+    box-sizing:border-box;
+    padding:8px 6px;
+    border:none;
+    border-radius:7px;
+    font-size:15px;
+    text-align:center;
+}
+#buildBtn{
+    padding:10px 12px;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+    background:linear-gradient(to bottom,#d9d9d9,#9f9f9f);
+    color:#222;
+}
+.summary-line{
+    margin-top:10px;
+    font-size:14px;
+    text-align:center;
+    color:#ddd;
+}
+.summary-line strong{
+    color:#ffd700;
+}
+.summary-line .ok{
+    color:#7cff8a;
+    font-weight:bold;
+}
+.summary-line .warn{
+    color:#ffd36a;
+    font-weight:bold;
+}
+.summary-line .bad{
+    color:#ff8a8a;
+    font-weight:bold;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    gap:6px;
+}
+.cell{
+    padding:6px 4px;
+    border-radius:6px;
+    font-size:12px;
+    text-align:center;
+    color:black;
+    font-weight:bold;
+    line-height:1.1;
+}
+.wheel-wrap{
+    position:relative;
+    width:540px;
+    margin:auto;
+}
+.pointer{
+    position:absolute;
+    top:50%;
+    left:10px;
+    transform:translateY(-50%);
+    width:0;
+    height:0;
+    border-top:18px solid transparent;
+    border-bottom:18px solid transparent;
+    border-left:34px solid #ff2a2a;
+    filter:drop-shadow(0 0 4px rgba(0,0,0,0.5));
+    z-index:5;
+}
+.pointer::after{
+    content:"";
+    position:absolute;
+    top:-6px;
+    left:-42px;
+    width:10px;
+    height:12px;
+    background:#b30000;
+    border-radius:2px;
+}
+canvas{
+    display:block;
+    margin:auto;
+    max-width:100%;
+    height:auto;
+    cursor:pointer;
+}
+.buttons{
+    margin-top:16px;
+}
+button{
+    padding:14px 24px;
+    margin:5px;
+    font-size:17px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+}
+button:hover{
+    transform:scale(1.03);
+}
+#resetBtn{
+    background:linear-gradient(to bottom,#d9d9d9,#9f9f9f);
+    color:#222;
+}
+#result{
+    font-size:34px;
+    margin-top:18px;
+    color:gold;
+    min-height:70px;
+    padding:8px 12px;
+    border-radius:14px;
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+#result.win-flash{
+    background:rgba(255,215,0,0.15);
+    box-shadow:0 0 28px rgba(255,215,0,0.65);
+    animation:pulseWin .9s ease 0s 3;
+}
+#result.big-win{
+    background:rgba(255,90,90,0.18);
+    box-shadow:0 0 34px rgba(255,80,80,0.80);
+    animation:bigPulse 1s ease 0s 3;
+}
+.install-note{
+    margin-top:8px;
+    color:#ddd;
+    font-size:14px;
+}
+@keyframes pulseWin{
+    0%{transform:scale(1)}
+    50%{transform:scale(1.08)}
+    100%{transform:scale(1)}
+}
+@keyframes bigPulse{
+    0%{transform:scale(1)}
+    30%{transform:scale(1.12)}
+    60%{transform:scale(1.04)}
+    100%{transform:scale(1)}
+}
+#infos{
+    margin-top:8px;
+    font-size:17px;
+    color:#ddd;
+}
+@media (max-width:1250px){
+    .config-bar{
+        grid-template-columns:repeat(4,1fr);
+    }
+}
+@media (max-width:1100px){
+    .main-layout{
+        flex-direction:column;
+    }
+    .wheel-wrap{
+        width:100%;
+        max-width:540px;
+    }
+    .grid{
+        grid-template-columns:repeat(6,1fr);
+    }
+}
+@media (max-width:700px){
+    .config-bar{
+        grid-template-columns:repeat(3,1fr);
+    }
+    .grid{
+        grid-template-columns:repeat(4,1fr);
+    }
+    #result{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🎡 La Roue des Bounty 🎡</h1>
+
+    <div class="main-layout">
+        <div class="left-column">
+            <div class="panel">
+                <div class="config-bar">
+                    <div class="cfg">
+                        <label for="totalCases">Cases / joueurs</label>
+                        <input type="number" id="totalCases" min="1" value="64">
+                    </div>
+                    <div class="cfg">
+                        <label for="count5">5 €</label>
+                        <input type="number" id="count5" min="0" value="52">
+                    </div>
+                    <div class="cfg">
+                        <label for="count10">10 €</label>
+                        <input type="number" id="count10" min="0" value="6">
+                    </div>
+                    <div class="cfg">
+                        <label for="count25">25 €</label>
+                        <input type="number" id="count25" min="0" value="2">
+                    </div>
+                    <div class="cfg">
+                        <label for="count50">50 €</label>
+                        <input type="number" id="count50" min="0" value="2">
+                    </div>
+                    <div class="cfg">
+                        <label for="count100">100 €</label>
+                        <input type="number" id="count100" min="0" value="1">
+                    </div>
+                    <div class="cfg">
+                        <label for="count150">150 €</label>
+                        <input type="number" id="count150" min="0" value="1">
+                    </div>
+                    <button id="buildBtn" onclick="buildWheelFromInputs()">Construire</button>
+                </div>
+
+                <div class="summary-line">
+                    Total configuré : <strong id="configuredCount">64</strong> |
+                    Cases demandées : <strong id="requestedCount">64</strong> |
+                    État : <strong id="countStatus" class="ok">OK</strong>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Gains restants</h2>
+                <div id="remainingList" class="grid"></div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="wheel-wrap">
+                <div class="pointer"></div>
+                <canvas id="wheel" width="540" height="540"></canvas>
+            </div>
+
+            <div class="buttons">
+                <button id="resetBtn" onclick="resetGame()">Reset</button>
+            </div>
+
+            <div id="result">Prêt à jouer</div>
+            <div id="infos"></div>
+            <div class="install-note">Clique sur le logo au centre pour lancer le tirage.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+let gains = [];
+let initialGains = [];
+let angle = 0;
+let spinning = false;
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const resultDiv = document.getElementById("result");
+
+const cx = 270, cy = 270, radius = 220;
+const centerButtonRadius = 68;
+const pointerAngle = Math.PI;
+
+let audioCtx = null;
+let lastTickIndex = -1;
+
+const clubLogo = new Image();
+clubLogo.src = "pexiora_logo.png";
+clubLogo.onload = () => draw();
+
+function ensureAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+}
+
+function playTick() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1100, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.06, now + 0.003);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.04);
+}
+
+function playSmallWinSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(523.25, now);
+    osc.frequency.setValueAtTime(659.25, now + 0.10);
+    osc.frequency.setValueAtTime(783.99, now + 0.20);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.10, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.48);
+}
+
+function playBigWinSound() {
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+
+    const oscBoom = audioCtx.createOscillator();
+    const gainBoom = audioCtx.createGain();
+    oscBoom.type = "sawtooth";
+    oscBoom.frequency.setValueAtTime(90, now);
+    oscBoom.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+
+    gainBoom.gain.setValueAtTime(0.0001, now);
+    gainBoom.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
+    gainBoom.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+    oscBoom.connect(gainBoom);
+    gainBoom.connect(audioCtx.destination);
+    oscBoom.start(now);
+    oscBoom.stop(now + 0.45);
+
+    const oscSpark = audioCtx.createOscillator();
+    const gainSpark = audioCtx.createGain();
+    oscSpark.type = "triangle";
+    oscSpark.frequency.setValueAtTime(880, now + 0.03);
+    oscSpark.frequency.setValueAtTime(1174, now + 0.12);
+    oscSpark.frequency.setValueAtTime(1567, now + 0.22);
+
+    gainSpark.gain.setValueAtTime(0.0001, now + 0.02);
+    gainSpark.gain.exponentialRampToValueAtTime(0.10, now + 0.06);
+    gainSpark.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+    oscSpark.connect(gainSpark);
+    gainSpark.connect(audioCtx.destination);
+    oscSpark.start(now + 0.02);
+    oscSpark.stop(now + 0.55);
+}
+
+function flashResult(bigWin = false) {
+    resultDiv.classList.remove("win-flash", "big-win");
+    void resultDiv.offsetWidth;
+    resultDiv.classList.add(bigWin ? "big-win" : "win-flash");
+}
+
+function getInputNumber(id) {
+    const n = parseInt(document.getElementById(id).value, 10);
+    return isNaN(n) || n < 0 ? 0 : n;
+}
+
+function getConfiguredCounts() {
+    return {
+        totalCases: getInputNumber("totalCases"),
+        c5: getInputNumber("count5"),
+        c10: getInputNumber("count10"),
+        c25: getInputNumber("count25"),
+        c50: getInputNumber("count50"),
+        c100: getInputNumber("count100"),
+        c150: getInputNumber("count150")
+    };
+}
+
+function computeSummary() {
+    const cfg = getConfiguredCounts();
+    const totalConfigured = cfg.c5 + cfg.c10 + cfg.c25 + cfg.c50 + cfg.c100 + cfg.c150;
+
+    document.getElementById("configuredCount").textContent = totalConfigured;
+    document.getElementById("requestedCount").textContent = cfg.totalCases;
+
+    const statusEl = document.getElementById("countStatus");
+
+    if (totalConfigured === cfg.totalCases) {
+        statusEl.textContent = "OK";
+        statusEl.className = "ok";
+    } else if (totalConfigured < cfg.totalCases) {
+        statusEl.textContent = "Complété en 5 €";
+        statusEl.className = "warn";
+    } else {
+        statusEl.textContent = "Trop de cases";
+        statusEl.className = "bad";
+    }
+}
+
+function buildPrizeArrayFromInputs() {
+    const cfg = getConfiguredCounts();
+
+    if (cfg.totalCases < 1) {
+        alert("Le nombre de cases doit être au moins de 1.");
+        return null;
+    }
+
+    let c5 = cfg.c5;
+    const others = cfg.c10 + cfg.c25 + cfg.c50 + cfg.c100 + cfg.c150;
+    const totalConfigured = c5 + others;
+
+    if (totalConfigured > cfg.totalCases) {
+        alert("Le total des cases bounty dépasse le nombre de cases demandé.");
+        return null;
+    }
+
+    if (totalConfigured < cfg.totalCases) {
+        c5 += (cfg.totalCases - totalConfigured);
+        document.getElementById("count5").value = c5;
+    }
+
+    const arr = [];
+    for (let i = 0; i < c5; i++) arr.push(5);
+    for (let i = 0; i < cfg.c10; i++) arr.push(10);
+    for (let i = 0; i < cfg.c25; i++) arr.push(25);
+    for (let i = 0; i < cfg.c50; i++) arr.push(50);
+    for (let i = 0; i < cfg.c100; i++) arr.push(100);
+    for (let i = 0; i < cfg.c150; i++) arr.push(150);
+
+    return arr;
+}
+
+function distributeAroundWheel(arr) {
+    if (!arr || arr.length === 0) return [];
+
+    const low = [];
+    const high = [];
+
+    arr.forEach(v => {
+        if (v === 5) low.push(v);
+        else high.push(v);
+    });
+
+    high.sort((a, b) => b - a);
+
+    const total = arr.length;
+    const result = new Array(total).fill(null);
+
+    if (high.length > 0) {
+        for (let i = 0; i < high.length; i++) {
+            let pos = Math.floor((i * total) / high.length);
+            while (result[pos] !== null) {
+                pos = (pos + 1) % total;
+            }
+            result[pos] = high[i];
+        }
+    }
+
+    let lowIndex = 0;
+    for (let i = 0; i < total; i++) {
+        if (result[i] === null) {
+            result[i] = low[lowIndex++];
+        }
+    }
+
+    const shift = Math.floor(total / 7);
+    const rotated = [];
+    for (let i = 0; i < total; i++) {
+        rotated.push(result[(i + shift) % total]);
+    }
+
+    return rotated;
+}
+
+function buildWheelFromInputs() {
+    if (spinning) return;
+
+    const arr = buildPrizeArrayFromInputs();
+    if (!arr || arr.length === 0) return;
+
+    computeSummary();
+
+    initialGains = distributeAroundWheel(arr);
+    gains = [...initialGains];
+    angle = 0;
+
+    draw();
+    updateLists();
+
+    resultDiv.classList.remove("win-flash", "big-win");
+    resultDiv.innerHTML = "Roue construite";
+}
+
+function color(v) {
+    if (v === 150) return "#ff2d2d";
+    if (v === 100) return "#ff7a00";
+    if (v === 50) return "#ffcc00";
+    if (v === 25) return "#39c5ff";
+    if (v === 10) return "#4dff88";
+    return "#e0e0e0";
+}
+
+function drawCenterButton() {
+    const time = Date.now() * 0.003;
+    const pulse = spinning ? 0 : Math.sin(time) * 4;
+
+    const gradient = ctx.createRadialGradient(
+        cx, cy, 10,
+        cx, cy, 82 + pulse
+    );
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+    gradient.addColorStop(0.45, "rgba(255, 215, 0, 0.18)");
+    gradient.addColorStop(1, "rgba(255, 215, 0, 0)");
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 82 + pulse, 0, 2 * Math.PI);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, centerButtonRadius + 4, 0, 2 * Math.PI);
+    ctx.fillStyle = spinning ? "#444" : "#111";
+    ctx.fill();
+    ctx.strokeStyle = "#ddd";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    if (clubLogo.complete && clubLogo.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, centerButtonRadius, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(clubLogo, cx - centerButtonRadius, cy - centerButtonRadius, centerButtonRadius * 2, centerButtonRadius * 2);
+        ctx.restore();
+    } else {
+        ctx.beginPath();
+        ctx.arc(cx, cy, centerButtonRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = spinning ? "#666" : "#ffcc33";
+        ctx.fill();
+        ctx.fillStyle = "#222";
+        ctx.font = "bold 16px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("PPC", cx, cy);
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, 540, 540);
+
+    if (gains.length === 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = "#444";
+        ctx.fill();
+
+        drawCenterButton();
+
+        ctx.fillStyle = "white";
+        ctx.font = "28px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Terminé", cx, cy + 110);
+        return;
+    }
+
+    const arc = 2 * Math.PI / gains.length;
+
+    for (let i = 0; i < gains.length; i++) {
+        const start = angle + i * arc;
+        const end = start + arc;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = color(gains[i]);
+        ctx.fill();
+
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + arc / 2);
+        ctx.fillStyle = "black";
+        ctx.font = gains.length > 70 ? "10px Arial" : gains.length > 45 ? "11px Arial" : "13px Arial";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(gains[i] + "€", radius - 18, 0);
+        ctx.restore();
+    }
+
+    drawCenterButton();
+}
+
+function updateLists() {
+    const r = document.getElementById("remainingList");
+    const infos = document.getElementById("infos");
+
+    r.innerHTML = "";
+    gains.forEach(g => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.style.background = color(g);
+        c.textContent = g + "€";
+        r.appendChild(c);
+    });
+
+    infos.innerHTML = "Cases restantes : <b>" + gains.length + "</b>";
+}
+
+function getIndexUnderPointer(testAngle = angle, arr = gains) {
+    if (!arr || arr.length === 0) return -1;
+
+    const arc = 2 * Math.PI / arr.length;
+    let relative = pointerAngle - testAngle;
+    relative = ((relative % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+    let index = Math.floor(relative / arc);
+    if (index < 0) index = 0;
+    if (index >= arr.length) index = arr.length - 1;
+
+    return index;
+}
+
+function updateTickSound() {
+    if (gains.length === 0 || !audioCtx) return;
+
+    const indexUnderPointer = getIndexUnderPointer(angle, gains);
+
+    if (indexUnderPointer !== lastTickIndex) {
+        lastTickIndex = indexUnderPointer;
+        playTick();
+    }
+}
+
+function spin() {
+    if (spinning || gains.length === 0) return;
+
+    ensureAudio();
+    spinning = true;
+    lastTickIndex = -1;
+
+    resultDiv.classList.remove("win-flash", "big-win");
+    resultDiv.innerHTML = "";
+
+    const selectedIndex = Math.floor(Math.random() * gains.length);
+    const arc = 2 * Math.PI / gains.length;
+
+    const centerOfSelected = (selectedIndex + 0.5) * arc;
+    const currentNormalized = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const targetNormalized = ((pointerAngle - centerOfSelected) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+
+    let delta = targetNormalized - currentNormalized;
+    if (delta < 0) delta += 2 * Math.PI;
+
+    const extraTurns = (8 + Math.random() * 2) * 2 * Math.PI;
+    const start = angle;
+    const final = angle + extraTurns + delta;
+
+    const duration = 6500;
+    let startTime = null;
+
+    function anim(t) {
+        if (!startTime) startTime = t;
+        let p = (t - startTime) / duration;
+        if (p > 1) p = 1;
+
+        const ease = 1 - Math.pow(1 - p, 4);
+        angle = start + (final - start) * ease;
+
+        draw();
+        updateTickSound();
+
+        if (p < 1) {
+            requestAnimationFrame(anim);
+        } else {
+            angle = ((final % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            draw();
+            finish();
+        }
+    }
+
+    requestAnimationFrame(anim);
+}
+
+function finish() {
+    const index = getIndexUnderPointer(angle, gains);
+    const g = gains[index];
+
+    gains.splice(index, 1);
+
+    const bigWin = (g === 50 || g === 100 || g === 150);
+
+    resultDiv.innerHTML = "🎉 " + g + " €";
+    flashResult(bigWin);
+
+    if (bigWin) playBigWinSound();
+    else playSmallWinSound();
+
+    draw();
+    updateLists();
+
+    spinning = false;
+}
+
+function resetGame() {
+    if (spinning) return;
+
+    gains = [...initialGains];
+    angle = 0;
+
+    draw();
+    updateLists();
+
+    resultDiv.classList.remove("win-flash", "big-win");
+    resultDiv.innerHTML = "Nouvelle partie";
+}
+
+canvas.addEventListener("click", function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    const dx = x - cx;
+    const dy = y - cy;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= centerButtonRadius && !spinning && gains.length > 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, centerButtonRadius + 10, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(255,255,255,0.25)";
+        ctx.fill();
+        spin();
+    }
+});
+
+function animateCenter() {
+    if (!spinning) draw();
+    requestAnimationFrame(animateCenter);
+}
+
+["totalCases","count5","count10","count25","count50","count100","count150"]
+.forEach(id => document.getElementById(id).addEventListener("input", computeSummary));
+
+computeSummary();
+buildWheelFromInputs();
+animateCenter();
+</script>
+</body>
+</html>
